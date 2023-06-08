@@ -1,105 +1,162 @@
-/* USER CODE BEGIN Header */
-/**
-  ******************************************************************************
-  * @file           : main.c
-  * @brief          : Main program body
-  ******************************************************************************
-  * @attention
-  *
-  * Copyright (c) 2023 STMicroelectronics.
-  * All rights reserved.
-  *
-  * This software is licensed under terms that can be found in the LICENSE file
-  * in the root directory of this software component.
-  * If no LICENSE file comes with this software, it is provided AS-IS.
-  *
-  ******************************************************************************
-  */
-/* USER CODE END Header */
-/* Includes ------------------------------------------------------------------*/
+
 #include "main.h"
 
-/* Private includes ----------------------------------------------------------*/
-/* USER CODE BEGIN Includes */
+#define RS_PORT GPIOA	//D7
+#define RS_PIN GPIO_PIN_8
 
-/* USER CODE END Includes */
+#define D7_PORT GPIOA	//D8
+#define D7_PIN GPIO_PIN_9
 
-/* Private typedef -----------------------------------------------------------*/
-/* USER CODE BEGIN PTD */
+#define D6_PORT GPIOC	//D6
+#define D6_PIN GPIO_PIN_7
 
-/* USER CODE END PTD */
+#define D5_PORT GPIOB	//D10
+#define D5_PIN GPIO_PIN_6
 
-/* Private define ------------------------------------------------------------*/
-/* USER CODE BEGIN PD */
-/* USER CODE END PD */
+#define D4_PORT GPIOA	//D11
+#define D4_PIN GPIO_PIN_7
 
-/* Private macro -------------------------------------------------------------*/
-/* USER CODE BEGIN PM */
+#define E_PORT GPIOA	//D12
+#define E_PIN GPIO_PIN_6
 
-/* USER CODE END PM */
+typedef struct{
+	GPIO_TypeDef * port;
+	uint16_t pin;
 
-/* Private variables ---------------------------------------------------------*/
+}data_gpio;
+
+typedef struct{
+	GPIO_TypeDef* rs_port;
+	uint16_t  rs_pin;
+
+	GPIO_TypeDef * en_port;
+	uint16_t  en_pin;
+
+	data_gpio data[4];
+}LCD_handler;
+
+
+
 UART_HandleTypeDef huart2;
 
-/* USER CODE BEGIN PV */
-
-/* USER CODE END PV */
-
-/* Private function prototypes -----------------------------------------------*/
 void SystemClock_Config(void);
 static void MX_GPIO_Init(void);
 static void MX_USART2_UART_Init(void);
-/* USER CODE BEGIN PFP */
 
-/* USER CODE END PFP */
 
-/* Private user code ---------------------------------------------------------*/
-/* USER CODE BEGIN 0 */
+void lcd_write(LCD_handler lcd, uint8_t data)
+{
+	for(uint8_t i =0; i<4;i++)
+	{
+		HAL_GPIO_WritePin(lcd.data[i].port, lcd.data[i].pin, (data >> i)&0x01);
+	}
+	HAL_GPIO_WritePin(lcd.en_port, lcd.en_pin, GPIO_PIN_SET);
+	HAL_Delay(1);
+	HAL_GPIO_WritePin(lcd.en_port, lcd.en_pin, GPIO_PIN_RESET);
+}
 
-/* USER CODE END 0 */
 
-/**
-  * @brief  The application entry point.
-  * @retval int
-  */
+void lcd_WriteCommand(LCD_handler lcd, uint8_t data)
+{
+	HAL_GPIO_WritePin(lcd.rs_port, lcd.rs_pin,GPIO_PIN_RESET);
+
+	lcd_write(lcd,((data&0xF0)>>4));
+	lcd_write(lcd,(data&0x0F));
+}
+
+void lcd_WriteData(LCD_handler lcd, uint8_t data)
+{
+	HAL_GPIO_WritePin(lcd.rs_port, lcd.rs_pin,GPIO_PIN_SET);
+
+	lcd_write(lcd,((data&0xF0)>>4));
+	lcd_write(lcd,(data&0x0F));
+}
+
+
+
+
+
+void init_lcd_gpio(LCD_handler lcd)
+{
+	GPIO_InitTypeDef gpio;
+	for(int i=0;i<4;i++)
+	{
+		gpio.Mode = GPIO_MODE_OUTPUT_PP;
+		gpio.Speed= GPIO_SPEED_FREQ_LOW;
+		gpio.Pin = lcd.data[i].pin;
+		HAL_GPIO_Init(lcd.data[i].port, &gpio);
+	}
+
+	gpio.Mode = GPIO_MODE_OUTPUT_PP;
+	gpio.Speed= GPIO_SPEED_FREQ_LOW;
+	gpio.Pin = lcd.en_pin;
+	HAL_GPIO_Init(lcd.en_port, &gpio);
+
+	gpio.Mode = GPIO_MODE_OUTPUT_PP;
+	gpio.Speed= GPIO_SPEED_FREQ_LOW;
+	gpio.Pin = lcd.rs_pin;
+	HAL_GPIO_Init(lcd.rs_port, &gpio);
+}
+
 int main(void)
 {
-  /* USER CODE BEGIN 1 */
 
-  /* USER CODE END 1 */
-
-  /* MCU Configuration--------------------------------------------------------*/
-
-  /* Reset of all peripherals, Initializes the Flash interface and the Systick. */
   HAL_Init();
 
-  /* USER CODE BEGIN Init */
 
-  /* USER CODE END Init */
-
-  /* Configure the system clock */
   SystemClock_Config();
 
-  /* USER CODE BEGIN SysInit */
-
-  /* USER CODE END SysInit */
-
-  /* Initialize all configured peripherals */
   MX_GPIO_Init();
   MX_USART2_UART_Init();
-  /* USER CODE BEGIN 2 */
 
-  /* USER CODE END 2 */
+  //INIT
 
-  /* Infinite loop */
-  /* USER CODE BEGIN WHILE */
+  data_gpio pins[4]={
+		  {D4_PORT,D4_PIN},
+		  {D5_PORT,D5_PIN},
+		  {D6_PORT,D6_PIN},
+		  {D7_PORT,D7_PIN}};
+  LCD_handler lcd;
+
+  for (int i = 0; i < 4; i++) {
+	  lcd.data[i] = pins[i];
+  }
+  lcd.en_pin = E_PIN;
+  lcd.en_port = E_PORT;
+  lcd.rs_pin = RS_PIN;
+  lcd.rs_port =RS_PORT;
+
+  init_lcd_gpio(lcd);
+
+
+  lcd_WriteCommand(lcd,0x33);
+  lcd_WriteCommand(lcd,0x32);
+  lcd_WriteCommand(lcd,0x28);
+
+  lcd_WriteCommand(lcd,0x08);
+  lcd_WriteCommand(lcd,0x01);
+  lcd_WriteCommand(lcd,0x04 | 0x02);
+
+
+
+  //Display on
+  lcd_WriteCommand(lcd,0x0F);
+  HAL_Delay(10);
+  lcd_WriteData(lcd, 0b01001010);//J
+  HAL_Delay(10);
+  lcd_WriteData(lcd, 0b00100111);//'
+  HAL_Delay(10);
+  lcd_WriteData(lcd, 0b01000001);//A
+  HAL_Delay(10);
+  lcd_WriteData(lcd, 0b01001001);//I
+  HAL_Delay(10);
   while (1)
   {
-    /* USER CODE END WHILE */
 
-    /* USER CODE BEGIN 3 */
+
+
   }
-  /* USER CODE END 3 */
+
 }
 
 /**
@@ -197,6 +254,9 @@ static void MX_GPIO_Init(void)
   __HAL_RCC_GPIOA_CLK_ENABLE();
   __HAL_RCC_GPIOB_CLK_ENABLE();
 
+
+
+
   /*Configure GPIO pin Output Level */
   HAL_GPIO_WritePin(LD2_GPIO_Port, LD2_Pin, GPIO_PIN_RESET);
 
@@ -212,6 +272,7 @@ static void MX_GPIO_Init(void)
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
   HAL_GPIO_Init(LD2_GPIO_Port, &GPIO_InitStruct);
+
 
 }
 
