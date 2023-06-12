@@ -1,5 +1,6 @@
 
 #include "main.h"
+#include "string.h"
 
 #define RS_PORT GPIOA	//D7
 #define RS_PIN GPIO_PIN_8
@@ -98,6 +99,16 @@ void init_lcd_gpio(LCD_handler lcd)
 	HAL_GPIO_Init(lcd.rs_port, &gpio);
 }
 
+
+void lcd_WriteString(LCD_handler lcd,char a[])
+{
+	for(int i=0;i<strlen(a);i++)
+	{
+		lcd_WriteData(lcd,a[i]);
+		HAL_Delay(5);
+	}
+}
+
 int main(void)
 {
 
@@ -142,14 +153,11 @@ int main(void)
   //Display on
   lcd_WriteCommand(lcd,0x0F);
   HAL_Delay(10);
-  lcd_WriteData(lcd, 0b01001010);//J
-  HAL_Delay(10);
-  lcd_WriteData(lcd, 0b00100111);//'
-  HAL_Delay(10);
-  lcd_WriteData(lcd, 0b01000001);//A
-  HAL_Delay(10);
-  lcd_WriteData(lcd, 0b01001001);//I
-  HAL_Delay(10);
+
+  lcd_WriteString(lcd,"Bonjour");
+
+
+
   while (1)
   {
 
