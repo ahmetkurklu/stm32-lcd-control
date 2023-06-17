@@ -1,6 +1,8 @@
 
 #include "main.h"
 #include "string.h"
+#include "stdio.h"
+
 
 #define RS_PORT GPIOA	//D7
 #define RS_PIN GPIO_PIN_8
@@ -19,6 +21,7 @@
 
 #define E_PORT GPIOA	//D12
 #define E_PIN GPIO_PIN_6
+
 
 typedef struct{
 	GPIO_TypeDef * port;
@@ -56,7 +59,6 @@ void lcd_write(LCD_handler lcd, uint8_t data)
 	HAL_GPIO_WritePin(lcd.en_port, lcd.en_pin, GPIO_PIN_RESET);
 }
 
-
 void lcd_WriteCommand(LCD_handler lcd, uint8_t data)
 {
 	HAL_GPIO_WritePin(lcd.rs_port, lcd.rs_pin,GPIO_PIN_RESET);
@@ -72,10 +74,6 @@ void lcd_WriteData(LCD_handler lcd, uint8_t data)
 	lcd_write(lcd,((data&0xF0)>>4));
 	lcd_write(lcd,(data&0x0F));
 }
-
-
-
-
 
 void init_lcd_gpio(LCD_handler lcd)
 {
@@ -107,6 +105,10 @@ void lcd_WriteString(LCD_handler lcd,char a[])
 		lcd_WriteData(lcd,a[i]);
 		HAL_Delay(5);
 	}
+}
+
+void int_to_string(int n, char* str) {
+    sprintf(str, "%d", n);
 }
 
 int main(void)
@@ -155,13 +157,44 @@ int main(void)
   HAL_Delay(10);
 
   lcd_WriteString(lcd,"Bonjour");
+  HAL_Delay(2000);
+  //lcd_WriteCommand(lcd, 0x01);//Clear Display
+  //lcd_WriteCommand(lcd,0x02);// Cursor to the begining
+  lcd_WriteCommand(lcd, 0x14);
+  lcd_WriteCommand(lcd, 0x14);
+  lcd_WriteCommand(lcd, 0x14);
+  lcd_WriteCommand(lcd, 0xD4+4);
 
-
-
+  //80 1st line
+  //C0 2nd line
+  //94 3rd line
+  //D4 4rd line
+  int x=0,y=0,z=0;
+  char X[5];
+  char Y[5];
+  char Z[5];
   while (1)
   {
+	  lcd_WriteCommand(lcd, 0x01);
 
+	  int_to_string(x, X);
+	  int_to_string(y, Y);
+	  int_to_string(z, Z);
 
+	  lcd_WriteString(lcd,"X : ");
+	  lcd_WriteString(lcd,X);
+	  lcd_WriteCommand(lcd, 0xC0);
+	  lcd_WriteString(lcd,"Y : ");
+	  lcd_WriteString(lcd,Y);
+	  lcd_WriteCommand(lcd, 0x94);
+	  lcd_WriteString(lcd,"Z : ");
+	  lcd_WriteString(lcd,Z);
+
+	  x=x+2;
+	  y=y+4;
+	  z=z+10;
+
+	  HAL_Delay(1000);
 
   }
 
