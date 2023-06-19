@@ -1,0 +1,6 @@
+../Core/Src/lcd.c:11:6:lcd_write	16	static
+../Core/Src/lcd.c:22:6:lcd_WriteCommand	56	static
+../Core/Src/lcd.c:30:6:lcd_WriteData	56	static
+../Core/Src/lcd.c:38:6:lcd_init_gpio	32	static
+../Core/Src/lcd.c:60:6:lcd_init	56	static
+../Core/Src/lcd.c:72:6:lcd_WriteString	64	static
