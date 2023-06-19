@@ -8,6 +8,8 @@
 #include "lcd.h"
 #include "string.h"
 
+const int LINE[4] = {0x00,0x40,0x14,0x54};
+
 void lcd_write(LCD_handler lcd, uint8_t data)
 {
 	for(uint8_t i =0; i<4;i++)
@@ -25,6 +27,7 @@ void lcd_WriteCommand(LCD_handler lcd, uint8_t data)
 
 	lcd_write(lcd,((data&0xF0)>>4));
 	lcd_write(lcd,(data&0x0F));
+	HAL_Delay(5);
 }
 
 void lcd_WriteData(LCD_handler lcd, uint8_t data)
@@ -33,6 +36,7 @@ void lcd_WriteData(LCD_handler lcd, uint8_t data)
 
 	lcd_write(lcd,((data&0xF0)>>4));
 	lcd_write(lcd,(data&0x0F));
+	HAL_Delay(5);
 }
 
 void lcd_init_gpio(LCD_handler lcd)
@@ -74,6 +78,13 @@ void lcd_WriteString(LCD_handler lcd,char a[])
 	for(int i=0;i<strlen(a);i++)
 	{
 		lcd_WriteData(lcd,a[i]);
-		HAL_Delay(5);
+	}
+}
+
+void lcd_SetCursor(LCD_handler lcd,int line,int row)
+{
+	if((line >-1 && line <5) || (row >-1 && row < 20))
+	{
+		lcd_WriteCommand(lcd, SET_DDRAM | (LINE[line] + row));
 	}
 }

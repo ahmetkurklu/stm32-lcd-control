@@ -33,6 +33,11 @@
 #define E_PIN GPIO_PIN_6
 
 
+//80 1st line
+//C0 2nd line
+//94 3rd line
+//D4 4rd line
+
 typedef struct{
 	GPIO_TypeDef * port;
 	uint16_t pin;
@@ -56,6 +61,7 @@ void lcd_WriteData(LCD_handler lcd, uint8_t data);
 void lcd_init_gpio(LCD_handler lcd);
 void lcd_init(LCD_handler lcd);
 void lcd_WriteString(LCD_handler lcd,char a[]);
+void lcd_SetCursor(LCD_handler lcd,int line,int row);
 
 
 

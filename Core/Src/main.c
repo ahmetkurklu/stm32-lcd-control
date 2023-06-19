@@ -9,26 +9,17 @@ UART_HandleTypeDef huart2;
 void SystemClock_Config(void);
 static void MX_GPIO_Init(void);
 static void MX_USART2_UART_Init(void);
-
-
-void int_to_string(int n, char* str) {
-    sprintf(str, "%d", n);
-}
+void int_to_string(int n, char* str);
 
 
 int main(void)
 {
-
   HAL_Init();
-
-
   SystemClock_Config();
-
   MX_GPIO_Init();
   MX_USART2_UART_Init();
 
-  //INIT
-
+  //INIT LCD_HANDLER
   data_gpio pins[4]={
 		  {D4_PORT,D4_PIN},
 		  {D5_PORT,D5_PIN},
@@ -44,13 +35,11 @@ int main(void)
   lcd.rs_pin = RS_PIN;
   lcd.rs_port =RS_PORT;
 
+  //INIT GPIO & START LCD INIT PROCESS
   lcd_init_gpio(lcd);
   lcd_init(lcd);
 
 
-  lcd_WriteString(lcd,"Bonjour");
-  HAL_Delay(2000);
-  lcd_WriteCommand(lcd,RETURN_HOME);
   /*
 
 
@@ -72,6 +61,14 @@ int main(void)
   char Z[5];*/
   while (1)
   {
+
+	  for(int i=0;i<4;i++){
+		  for(int j=0;j<20;j++)
+		  {
+			  lcd_SetCursor(lcd, i, j);
+			  HAL_Delay(1000);
+		  }
+	  }
 	  /*
 	  lcd_WriteCommand(lcd, 0x01);
 
@@ -96,6 +93,10 @@ int main(void)
 */
   }
 
+}
+
+void int_to_string(int n, char* str) {
+    sprintf(str, "%d", n);
 }
 
 /**
